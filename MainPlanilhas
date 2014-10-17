@@ -15,13 +15,11 @@ public class MainPlanilhas {
 	public static void main(String[] args) throws AuthenticationException, 
 	MalformedURLException, IOException, ServiceException {
 		
-		ExercicioGoogleDAO egd = new ExercicioGoogleDAO();
-		egd.criarExercicio();
+	//ExercicioGoogleDAO egd = new ExercicioGoogleDAO();
+	//egd.criarExercicio();
 		
-		PlanilhasGoogle planilhaGoogle = new PlanilhasGoogle();
-		//planilhaGoogle.addConteudoEmCelula("PlanilhaTesteEducService", "Questão Multipla Escolha");
-		System.out.println(planilhaGoogle.buscaLinkPeloTitulo("PlanilhaTesteEducService"));
-		
+	//PlanilhasGoogle planilhaGoogle = new PlanilhasGoogle();
+	//System.out.println(planilhaGoogle.buscaLinkPeloTitulo("PlanilhaTesteEducService"));
 		
 		
 		
