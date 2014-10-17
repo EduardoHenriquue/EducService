@@ -1,0 +1,35 @@
+/**
+* Autor: Eduardo Henrique R. do Nasc.
+* Email: eduardo.henrique@dce.ufpb.br
+* 
+*/
+
+public class IDGenerator {
+	
+	private long contadorID;
+	
+	private static IDGenerator singleton = null;
+
+	private IDGenerator (){
+		this.contadorID = 0;
+	}	
+	
+	public static IDGenerator getInstance(){
+		if(singleton == null){
+			synchronized(IDGenerator.class){
+				if(singleton == null){
+					singleton = new IDGenerator();
+				}
+			}
+		}
+		
+		return singleton;
+	}
+  
+  // Este método gera um ID retorna um long referente ao ID.
+	public long gerarID(){
+	  this.contadorID ++;
+	  return this.contadorID;
+	}
+
+}
