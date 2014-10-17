@@ -1,0 +1,144 @@
+package br.ufpb.educservice.persistencia;
+
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+
+
+import br.ufpb.educservice.Exercicio;
+import br.ufpb.educservice.ExercicioDAO;
+import br.ufpb.educservice.Questao;
+import br.ufpb.educservice.QuestaoDissertativa;
+import br.ufpb.educservice.QuestaoMultiplaEscolha;
+import br.ufpb.educservice.QuestaoVouF;
+import br.ufpb.gdata.educservice.PlanilhasGoogle;
+
+
+public class ExercicioGoogleDAO implements ExercicioDAO{
+	
+	private List<Exercicio> exercicios = new LinkedList<Exercicio>();
+	private PlanilhasGoogle planilhaGoogle = new PlanilhasGoogle();
+	
+	/**
+	 * Este Método cria um Exercício e chama o método criarPlanilha da classe 
+	 * PlanilhasGoogle passando o ID do Exercicio como parâmetro
+	 * 
+	 */
+	public Exercicio criarExercicio() {
+		
+		// Cria um id com a data e a hora em que foi criado o exercício
+		String id = String.valueOf(new Date().toString());
+		Exercicio exercicio = new Exercicio(id);
+		this.exercicios.add(exercicio);
+		
+		planilhaGoogle.criarPlanilha(id);
+		return exercicio;
+	}
+
+	/**
+	 * Este Método exclui um Exercício da lista de exercicios
+	 * Passando o id por parâmetro
+	 * @throws ExercicioInexistenteException 
+	 */
+	public void apagar(String idExercicio) throws ExercicioInexistenteException {
+		Exercicio exercicio = this.pesquisarExercicioPorId(idExercicio); 
+		if(exercicio != null){
+			this.exercicios.remove(exercicio);
+		} else {
+			throw new ExercicioInexistenteException("Exercício inexistente!");
+		}
+		
+	}
+
+	@Override
+	public void atualizar(Exercicio e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	/**
+	 * Este método pesquisa um exercicio pelo ID, caso não seja encontrado lança uma exceção
+	 */
+	public Exercicio pesquisarExercicioPorId(String idExercicio) throws ExercicioInexistenteException{
+		
+		for(Exercicio exercicio: this.exercicios){
+			if(exercicio.getId().equals(idExercicio)){
+				return exercicio;
+			}
+		}
+				
+		throw new ExercicioInexistenteException("Exercício inexistente!");
+	}
+
+	@Override
+	public QuestaoMultiplaEscolha cadastrarQuestaoME(String idExercicio,
+			String enunciado, List<String> alternativas) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public QuestaoVouF cadastrarQuestaoVouF(String idExercicio,
+			List<String> afirmativas) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public QuestaoDissertativa cadastrarQuestaoDissertativa(String idExercicio, String enunciado) {
+		
+		
+		
+		return null;
+	}
+
+	@Override
+	public Questao pesquisarQuestaoPorId(String idExercicio, String idQuestao) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public QuestaoMultiplaEscolha pesquisarQuestaoMEPorId(String idExercicio,
+			String idQuestao) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public QuestaoVouF pesquisarQuestaoVouFPorId(String idExercicio,
+			String idQuestao) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public QuestaoDissertativa pesquisarQuestaoDissertativaPorId(
+			String idExercicio, String idQuestao) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public QuestaoMultiplaEscolha cadastrarRespostaQuestaoMEPorId(
+			String idExercicio, int alternativaCorreta) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public QuestaoVouF cadastrarRespostaQuestaoVouFPorId(String idExercicio,
+			List<String> respostas) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public QuestaoDissertativa cadastrarRespostaQuestaoDissertativaPorId(
+			String idExercicio, String idQuestao, String solucao) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	
+}
