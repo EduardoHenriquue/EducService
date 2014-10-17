@@ -26,10 +26,10 @@ public class IDGenerator {
 		return singleton;
 	}
   
-  // Este método gera um ID retorna um long referente ao ID.
+  	// Este método gera um ID retorna um long referente ao ID.
 	public long gerarID(){
-	  this.contadorID ++;
-	  return this.contadorID;
+		this.contadorID ++;
+		return this.contadorID;
 	}
 
 }
