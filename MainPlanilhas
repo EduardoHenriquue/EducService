@@ -1,0 +1,29 @@
+package br.ufpb.gdata.educservice;
+
+
+import br.ufpb.educservice.persistencia.ExercicioGoogleDAO;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+
+import com.google.gdata.util.AuthenticationException;
+import com.google.gdata.util.ServiceException;
+
+public class MainPlanilhas {
+
+
+	public static void main(String[] args) throws AuthenticationException, 
+	MalformedURLException, IOException, ServiceException {
+		
+		ExercicioGoogleDAO egd = new ExercicioGoogleDAO();
+		egd.criarExercicio();
+		
+		PlanilhasGoogle planilhaGoogle = new PlanilhasGoogle();
+		//planilhaGoogle.addConteudoEmCelula("PlanilhaTesteEducService", "Questão Multipla Escolha");
+		System.out.println(planilhaGoogle.buscaLinkPeloTitulo("PlanilhaTesteEducService"));
+		
+		
+		
+		
+	}
+}
