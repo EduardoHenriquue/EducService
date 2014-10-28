@@ -1,3 +1,13 @@
+package br.ufpb.educservice.persistencia;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
 * Autor: Eduardo Henrique R. do Nasc.
 * Email: eduardo.henrique@dce.ufpb.br
@@ -7,11 +17,20 @@
 public class IDGenerator {
 	
 	private long contadorID;
-	
+	private List<String> listaDeID = new ArrayList<String>(); 
+	private final String ARQUIVO_COM_ID = "PersistenciaID.txt";	
 	private static IDGenerator singleton = null;
 
+	/**
+	 * Construtor
+	 */
 	private IDGenerator (){
-		this.contadorID = 0;
+		try{
+			this.contadorID = this.getUltimoID();
+		} catch (Exception e){
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
 	}	
 	
 	public static IDGenerator getInstance(){
@@ -27,9 +46,84 @@ public class IDGenerator {
 	}
   
   	// Este método gera um ID retorna um long referente ao ID.
-	public long gerarID(){
-		this.contadorID ++;
-		return this.contadorID;
+	public String gerarID(){
+		try{
+		
+			String id = Long.toString(this.contadorID++);
+			this.listaDeID.add(id);
+			this.gravarID(ARQUIVO_COM_ID, id);
+			
+			return Integer.toString(this.getUltimoID());
+			
+		} catch (Exception e){
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		return "Não foi possível gerar o ID!";
+	}
+	
+	/**
+	 *  Este método gera um ID retorna um long referente ao ID.
+  	 *  Ainda falta concertar algumas coisas, pois, em casos de erro
+  	 *  está criando uma planilha com o nome "Não foi possível gerar o ID!"
+	 * @return
+	 * @throws ArquivoInexistenteException
+	 * @throws IOException
+	 */
+	public int getUltimoID() throws ArquivoInexistenteException, IOException{
+		
+		// Carrega o arquivo contendo os IDs gerados anteriormente
+		this.carregarID(ARQUIVO_COM_ID);
+		
+		// Obtem o ultimo ID da lista de IDs gerados
+		String ultimoID = this.listaDeID.get(this.listaDeID.size()-1);
+		
+		if(Integer.parseInt(ultimoID) < 0){
+			return Integer.parseInt(ultimoID);
+		} else {
+			return listaDeID.size();
+		}
+		
+		
+	}
+	
+	
+	/**
+	 * Gravador de ID
+	 * @param nomeDoArquivo
+	 * @param id
+	 * @throws ArquivoInexistenteException
+	 * @throws IOException
+	 */
+	
+	public void gravarID(String nomeDoArquivo, String id) throws ArquivoInexistenteException, IOException{
+		BufferedWriter gravador = null;
+		try{
+			gravador = new BufferedWriter(new FileWriter(nomeDoArquivo));
+			gravador.write(id);
+			
+		} finally {
+			if(gravador != null){
+				gravador.close();
+			}
+		}			
+	}
+	
+	public void carregarID(String nomeDoArquivo) throws ArquivoInexistenteException, IOException{
+		BufferedReader leitor = null;
+		
+		try{
+			leitor = new BufferedReader(new FileReader(nomeDoArquivo));
+			
+			do{
+				this.listaDeID.add(leitor.readLine());
+			} while(leitor.ready());
+			
+		} finally {
+			if(leitor != null){
+				leitor.close();
+			}
+		}	
 	}
 
 }
