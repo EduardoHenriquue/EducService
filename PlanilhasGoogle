@@ -16,8 +16,8 @@ import java.util.List;
 public class PlanilhasGoogle {
 
 	// Váriáveis referentes ao login e senha do usuário que possui conta no gmail
-	String USERNAME = "eduardo.henrique@dce.ufpb.br";
-    String PASSWORD = "easytrue01";
+	String USERNAME = "USERNAME";
+    String PASSWORD = "PASSWORD";
 	
     /**
      * Método cria uma planilha no Google Drive do usuário ao qual se atribui a conta.
