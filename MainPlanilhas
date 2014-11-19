@@ -18,10 +18,5 @@ public class MainPlanilhas {
 	//ExercicioGoogleDAO egd = new ExercicioGoogleDAO();
 	//egd.criarExercicio();
 		
-	//PlanilhasGoogle planilhaGoogle = new PlanilhasGoogle();
-	//System.out.println(planilhaGoogle.buscaLinkPeloTitulo("PlanilhaTesteEducService"));
-		
-		
-		
 	}
 }
