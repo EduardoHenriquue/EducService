@@ -26,8 +26,8 @@ public class PlanilhasGoogle {
 	private String worksheetDefault = "Página1";
 	
 	// Váriáveis referentes ao login e senha do usuário que possui conta no gmail
-	private String USERNAME = "educservice@dce.ufpb.br";
-    private String PASSWORD = "prol!cen2014";
+	private String USERNAME = "USERNAME";
+    	private String PASSWORD = "PASSWORD";
 	
     
     /**
