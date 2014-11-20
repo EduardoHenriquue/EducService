@@ -19,10 +19,8 @@ import java.util.List;
 
 
 public class PlanilhasGoogle {
-
-	// Essa variável irá auxiliar na adição de conteúdos as celulas. 
-	// Todas as perguntas localizar-se-ão na primeira coluna.
-	public static final int COLUNA_DA_QUESTAO = 1;
+	
+	// Worksheet default onde ficarão as questões e as alternativas
 	private String worksheetDefault = "Página1";
 	
 	// Váriáveis referentes ao login e senha do usuário que possui conta no gmail
@@ -30,7 +28,7 @@ public class PlanilhasGoogle {
     	private String PASSWORD = "PASSWORD";
 	
     
-    /**
+  /**
      * Método cria uma planilha no Google Drive do usuário ao qual se atribui a conta.
      * @param idExercicio
      */
@@ -139,6 +137,8 @@ public class PlanilhasGoogle {
     	    			    		
     	    		// Iniciliza a célula passando os parâmetros de linha, coluna e conteúdo
     	    		CellEntry cell = new CellEntry(linha, coluna, conteudo);
+    	    		// Atribui o número da linha em que a celula foi criada como Id.
+    	    		cell.setId(Integer.toString(linha));
     	    		// Insere a nova célula na worksheet
     	    		celulaFeed.insert(cell);
     	    		// Atualiza a worksheet, já com as novas celulas
@@ -153,8 +153,6 @@ public class PlanilhasGoogle {
     }
     
        
-    
-    
     /**
      * Este método busca a planilha pelo título
      * Consertar, pois, caso não encontre ainda retorna null
@@ -197,6 +195,60 @@ public class PlanilhasGoogle {
     	}
     	
     	 return null;
+    }
+    
+    
+    public String getConteudoDaCelulaPeloId(String tituloPlanilha, String idCelula) {
+    	
+    	try{
+	    	SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
+			
+			service.setUserCredentials(USERNAME, PASSWORD);
+			
+			SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
+			
+			WorksheetFeed worksheetFeed = service.getFeed(spreadsheet.getWorksheetFeedUrl(), WorksheetFeed.class);
+			
+			// Obtém a lista de worksheets existentes em uma planilha
+			List<WorksheetEntry> worksheets = worksheetFeed.getEntries();
+		
+		    for(WorksheetEntry works: worksheets){
+		    	if(works.getTitle().getPlainText().equals(this.worksheetDefault)){
+		    		URL celulaFeedURL = works.getCellFeedUrl();
+		    		CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
+		    		for(CellEntry celula: celulaFeed.getEntries()){
+		    			if(celula.getId().equals(idCelula)){
+		    				return celula.getCell().getInputValue();
+		    			}
+		    			
+		    		}
+		    		works.update();
+		    	}
+		    }
+
+		
+		} catch(Exception e){
+			e.printStackTrace();
+			
+		}
+		return "Não existe uma célula com este ID!";
+    }
+
+    
+    public void removePlanilha(String tituloPlanilha){
+    	try{
+	    	SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
+			
+			service.setUserCredentials(USERNAME, PASSWORD);
+			
+			SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
+			
+			spreadsheet.delete();
+			
+    	} catch(Exception e){
+			e.printStackTrace();
+			
+		}
     }
     
         
