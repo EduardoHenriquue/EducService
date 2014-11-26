@@ -22,13 +22,17 @@ public class PlanilhasGoogle {
 	
 	// Worksheet default onde ficarão as questões e as alternativas
 	private String worksheetDefault = "Página1";
+	// Palavra default para concatenar junto com o id, para distinguir as planilhas 
+	public static String palavraExercicio = "EXERCICIO";
+	// Usado para separar o id da palavra. Ex.: 01-EXERCICIO, 01-RESPOSTA
+	private String tokenDeSeparacao = "-";
 	
 	// Váriáveis referentes ao login e senha do usuário que possui conta no gmail
 	private String USERNAME = "USERNAME";
     	private String PASSWORD = "PASSWORD";
 	
     
-  /**
+ /**
      * Método cria uma planilha no Google Drive do usuário ao qual se atribui a conta.
      * @param idExercicio
      */
@@ -56,6 +60,7 @@ public class PlanilhasGoogle {
 			
 			// Seleciona o título dessa nova planilha
 			novaPlanilha.setTitle(new PlainTextConstruct(titulo));
+			
 			
 			// Atribui ou vincula a URL à planilha criada
 			service.insert(SPREADSHEET_FEED_URL, novaPlanilha);
@@ -369,9 +374,81 @@ public class PlanilhasGoogle {
     		
     	} catch(Exception e){
     		e.printStackTrace();
+    	}	
+    }
+    
+    
+    /**
+     * Consertar o retorno deste método
+     * @return
+     */
+    public String geradorDeID(){
+    	List<String> planilhas = new LinkedList<String>();
+    	
+    	try{
+    	
+    		// Autoriza o serviço para um usuário específico
+    		SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
+
+    		// Passa as credenciais do usuário
+    	    service.setUserCredentials(USERNAME, PASSWORD);
+    		
+    	    // Define a URL de requisição (esse padrão nunca muda)
+    	    URL SPREADSHEET_FEED_URL = new URL("https://spreadsheets.google.com/feeds/spreadsheets/private/full");
+
+    	    // Faz uma requisição à API e obtém todas as planilhas do usuário
+    	    SpreadsheetFeed feed = service.getFeed(SPREADSHEET_FEED_URL, SpreadsheetFeed.class);
+    	    
+    	    // Armazena o feed de todas as planilhas criadas pelo usuário
+    	    List<SpreadsheetEntry> spreadsheets = feed.getEntries();
+    	    for(SpreadsheetEntry spreadsheet: spreadsheets){
+    	    	// obtém todas as planilhas que contém a palavra EXERCICIO e adiciona no list planilhas
+    	    	if(spreadsheet.getTitle().getPlainText().contains(PlanilhasGoogle.palavraExercicio)){
+    	    		planilhas.add(spreadsheet.getTitle().getPlainText());
+    	    	}    	    	
+    	    }
+    	    
+    	    /*
+    	     *  caso seja excluída alguma planilha, a próxima criada iria repetir o numero anterior
+    	     *  Consertar essa parte. Tratar caso haja exclusão de planilhas
+    	     */
+    	    int proximoID = planilhas.size();
+	    	if(planilhas.isEmpty()){
+	    		++proximoID;   		
+	    	}
+	    	return Integer.toString(proximoID)+this.tokenDeSeparacao+PlanilhasGoogle.palavraExercicio;
+    	    
+    	    /*
+    	    // atribui a quantidade total do list planilhas a variável proximoID
+    	    // assim pode-se ter um controle sobre a quantidade de exercicios
+    	    int proximoID = planilhas.size();
+    	    
+	    	// caso a lista esteja não zerada, ou seja, haja planilhas de exercicio criadas
+    	    // cria uma planilha com o ID 1. Ex.: 1-EXERCICIO
+    	    if(!planilhas.isEmpty()){
+    	    	// inicializa um array para armazenar o título do último exercicio
+    	    	String[] ultimoExercicio = new String[3];
+    	    	// separa o id palavra exercicio
+	    		ultimoExercicio = planilhas.get(proximoID-1).split(this.tokenDeSeparacao);
+	    		// obtém o id e converte pra interio
+	    		int id = Integer.parseInt(ultimoExercicio[0]);
+	    		// acrescenta um unidade
+	    		++id;
+	    		return id+this.tokenDeSeparacao+PlanilhasGoogle.palavraExercicio;
+	    	} else{
+	    		// caso o list planilhas esteja zerado acrescenta uma unidade e retorna o id
+	    		++proximoID;
+	    		return Integer.toString(proximoID)+this.tokenDeSeparacao+PlanilhasGoogle.palavraExercicio;	
+	    	}
+    	    */
+    	    
+    	} catch(Exception e){
+    		System.out.println(e.getMessage());
+    		e.printStackTrace();
     	}
     	
-    }
-
-    
+		return "Não foi possível criar a planilha";
+    	
+  }
+  
 }
