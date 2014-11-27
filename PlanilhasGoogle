@@ -20,8 +20,6 @@ import java.util.List;
 
 public class PlanilhasGoogle {
 	
-	// Worksheet default onde ficarão as questões e as alternativas
-	private String worksheetDefault = "Página1";
 	// Palavra default para concatenar junto com o id, para distinguir as planilhas 
 	public static String palavraExercicio = "EXERCICIO";
 	// Usado para separar o id da palavra. Ex.: 01-EXERCICIO, 01-RESPOSTA
@@ -113,7 +111,7 @@ public class PlanilhasGoogle {
     	 return "Não há planilhas!";
     }
     
-    /**
+     /**
      * 
      * @param tituloPlanilha
      * @param tituloQuestao
@@ -125,33 +123,25 @@ public class PlanilhasGoogle {
     		
     		service.setUserCredentials(USERNAME, PASSWORD);
     		
+    		// Obtém a planilha segundo o seu título/id
     		SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
     		
-    		WorksheetFeed worksheetFeed = service.getFeed(spreadsheet.getWorksheetFeedUrl(), WorksheetFeed.class);
-    		
-    		// Obtém a lista de worksheets existentes em uma planilha
-    		List<WorksheetEntry> worksheets = worksheetFeed.getEntries();
-    		
-    		// Varre a lista de Worksheets existentes
-    	    for(WorksheetEntry works: worksheets){
-    	    	// Verifica se há a worksheet com o nome default ("Página1") 
-    	    	if(works.getTitle().getPlainText().equals(this.worksheetDefault)){
-    	    		
-    	    		URL celulaFeedURL = works.getCellFeedUrl();
-    	    		CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
-    	    			    		
-    	    		// Iniciliza a célula passando os parâmetros de linha, coluna e conteúdo
-    	    		CellEntry cell = new CellEntry(linha, coluna, conteudo);
-    	    		// Atribui o número da linha em que a celula foi criada como Id.
-    	    		cell.setId(Integer.toString(linha));
-    	    		// Insere a nova célula na worksheet
-    	    		celulaFeed.insert(cell);
-    	    		// Atualiza a worksheet, já com as novas celulas
-    	    		works.update();
-    	    	}
-    	    }
-
-    		
+    		// obtém a worksheet default dessa planilha, onde serão adicionados os conteúdos às células
+    		WorksheetEntry worksheetDefault = spreadsheet.getDefaultWorksheet();
+			
+    		// obtém as células dessa worksheet
+    	    URL celulaFeedURL = worksheetDefault.getCellFeedUrl();
+    	    CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
+    	    		    		
+    	    // Iniciliza a célula passando os parâmetros de linha, coluna e conteúdo
+    	    CellEntry cell = new CellEntry(linha, coluna, conteudo);
+    	    // Atribui o número da linha em que a celula foi criada como Id.
+    	    cell.setId(Integer.toString(linha));
+    	    // Insere a nova célula na worksheet
+    	    celulaFeed.insert(cell);
+    	    // Atualiza a worksheet, já com as novas celulas
+    	    worksheetDefault.update();
+    	    	    		
     	} catch(Exception e){
     		e.printStackTrace();
     	}	
@@ -208,52 +198,48 @@ public class PlanilhasGoogle {
     	try{
 	    	SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
 			
-			service.setUserCredentials(USERNAME, PASSWORD);
+		service.setUserCredentials(USERNAME, PASSWORD);
 			
-			SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
+		// Obtém a planilha segundo o seu título/id
+    		SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
+    		
+    		// obtém a worksheet default dessa planilha, onde serão adicionados os conteúdos às células
+    		WorksheetEntry worksheetDefault = spreadsheet.getDefaultWorksheet();
 			
-			WorksheetFeed worksheetFeed = service.getFeed(spreadsheet.getWorksheetFeedUrl(), WorksheetFeed.class);
-			
-			// Obtém a lista de worksheets existentes em uma planilha
-			List<WorksheetEntry> worksheets = worksheetFeed.getEntries();
-		
-		    for(WorksheetEntry works: worksheets){
-		    	if(works.getTitle().getPlainText().equals(this.worksheetDefault)){
-		    		URL celulaFeedURL = works.getCellFeedUrl();
-		    		CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
-		    		for(CellEntry celula: celulaFeed.getEntries()){
-		    			if(celula.getId().equals(idCelula)){
-		    				return celula.getCell().getInputValue();
-		    			}
-		    			
-		    		}
-		    		works.update();
+    		// obtém as células dessa worksheet
+		URL celulaFeedURL = worksheetDefault.getCellFeedUrl();
+		CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
+		for(CellEntry celula: celulaFeed.getEntries()){
+			if(celula.getId().equals(idCelula)){
+		    		return celula.getCell().getInputValue();
 		    	}
-		    }
-
-		
-		} catch(Exception e){
-			e.printStackTrace();
-			
 		}
-		return "Não existe uma célula com este ID!";
+		worksheetDefault.update();
+		    
+	} catch(Exception e){
+		e.printStackTrace();
+			
+	}
+	return "Não existe uma célula com este ID!";
     }
 
+    
+      
     
     public void removePlanilha(String tituloPlanilha){
     	try{
 	    	SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
 			
-			service.setUserCredentials(USERNAME, PASSWORD);
+		service.setUserCredentials(USERNAME, PASSWORD);
 			
-			SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
+		SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
 			
-			spreadsheet.delete();
+		spreadsheet.delete();
 			
     	} catch(Exception e){
-			e.printStackTrace();
+		e.printStackTrace();
 			
-		}
+	}
     }
     
         
@@ -264,31 +250,25 @@ public class PlanilhasGoogle {
 			
 			service.setUserCredentials(USERNAME, PASSWORD);
 			
-			SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
+			// Obtém a planilha segundo o seu título/id
+    		SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
+    		
+    		// obtém a worksheet default dessa planilha, onde serão adicionados os conteúdos às células
+    		WorksheetEntry worksheetDefault = spreadsheet.getDefaultWorksheet();
 			
-			WorksheetFeed worksheetFeed = service.getFeed(spreadsheet.getWorksheetFeedUrl(), WorksheetFeed.class);
-			
-			// Obtém a lista de worksheets existentes em uma planilha
-			List<WorksheetEntry> worksheets = worksheetFeed.getEntries();
-		
-		    for(WorksheetEntry works: worksheets){
-		    	if(works.getTitle().getPlainText().equals(this.worksheetDefault)){
-		    		URL celulaFeedURL = works.getCellFeedUrl();
-		    		CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
-		    		for(CellEntry celula: celulaFeed.getEntries()){
-		    			conteudos.add(celula.getCell().getInputValue());
-		    			
-		    		}
-		    		works.update();
-		    	}
-		    }
-
-		
-		} catch(Exception e){
-			e.printStackTrace();
-			
+    		// obtém as células dessa worksheet
+		URL celulaFeedURL = worksheetDefault.getCellFeedUrl();
+		CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
+		for(CellEntry celula: celulaFeed.getEntries()){
+		    conteudos.add(celula.getCell().getInputValue());
 		}
-		return conteudos;
+		worksheetDefault.update();
+		    
+	} catch(Exception e){
+		e.printStackTrace();
+			
+	}
+	return conteudos;
     }
 	
     
@@ -304,30 +284,24 @@ public class PlanilhasGoogle {
     	try{
 	    	SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
 			
-			service.setUserCredentials(USERNAME, PASSWORD);
+		service.setUserCredentials(USERNAME, PASSWORD);
 			
-			SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
+		// Obtém a planilha segundo o seu título/id
+    		SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(tituloPlanilha);
+    		
+    		// obtém a worksheet default dessa planilha, onde serão adicionados os conteúdos às células
+    		WorksheetEntry worksheetDefault = spreadsheet.getDefaultWorksheet();
 			
-			WorksheetFeed worksheetFeed = service.getFeed(spreadsheet.getWorksheetFeedUrl(), WorksheetFeed.class);
+    		// obtém as células dessa worksheet		
+		URL celulaFeedURL = worksheetDefault.getCellFeedUrl();
+		CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
 			
-			// Obtém a lista de worksheets existentes em uma planilha
-			List<WorksheetEntry> worksheets = worksheetFeed.getEntries();
-			
-			 for(WorksheetEntry works: worksheets){
-			    	if(works.getTitle().getPlainText().equals(this.worksheetDefault)){
-			    		
-			    		
-			    		URL celulaFeedURL = works.getCellFeedUrl();
-			    		CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
-			    		for(CellEntry celula: celulaFeed.getEntries()){
-			    			if(celula.getCell().getCol() == coluna)
-			    			ultimaLinha = celula.getCell().getRow();
-			    		
-			    		}    			
-			    		
-			    	}
-			 }
-			 
+		for(CellEntry celula: celulaFeed.getEntries()){
+			if(celula.getCell().getCol() == coluna){
+				ultimaLinha = celula.getCell().getRow();
+			}    			
+    		}	
+			    	
     	} catch(Exception e){
 			e.printStackTrace();			
 		}
@@ -337,7 +311,7 @@ public class PlanilhasGoogle {
         
     
     /**
-     * Este método atualiza o conteúdo de uma celula.
+     * Consertar este método. Deve atualizar preservando o conteúdo existente ou sobrescrevê-lo?
      * @param tituloPlanilha
      * @param nomeDaWorksheet
      * @param conteudo
@@ -449,6 +423,9 @@ public class PlanilhasGoogle {
     	
 		return "Não foi possível criar a planilha";
     	
-  }
-  
+    }
+
+   
+    
+    
 }
