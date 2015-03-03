@@ -25,12 +25,12 @@ public class PlanilhasGoogle {
 	public static String planilhaID = "PLANILHA_ID";
 	
 	// Váriáveis referentes ao login e senha do usuário que possui conta no gmail
-	private String USERNAME = "educservice@dce.ufpb.br";
-    private String PASSWORD = "prol!cen2014";
+	private String USERNAME = "username";
+    	private String PASSWORD = "password";
 	
 	
     
-    /**
+   /**
      * Método cria uma planilha no Google Drive do usuário ao qual se atribui a conta.
      * @param idExercicio
      */
@@ -135,11 +135,7 @@ public class PlanilhasGoogle {
     	    		    		
     	    // Iniciliza a célula passando os parâmetros de linha, coluna e conteúdo
     	    CellEntry cell = new CellEntry(linha, coluna, conteudo);
-    	    /*
-    	     *  Atribui a coordenada da celula como Id.
-    	     *  consertar esse id
-    	     */
-    	    //cell.setId(cell.getTitle().getPlainText());
+    	    
     	    // Insere a nova célula na worksheet
     	    celulaFeed.insert(cell);
     	    // Atualiza a worksheet, já com as novas celulas
@@ -153,7 +149,7 @@ public class PlanilhasGoogle {
        
     /**
      * Este método busca a planilha pelo título
-     * Consertar, pois, caso não encontre ainda retorna null
+     * Caso não encontre retorna null
      * @param titulo
      * @return
      */
@@ -175,9 +171,9 @@ public class PlanilhasGoogle {
     	    // Armazena o feed de todas as planilhas criadas pelo usuário
     	    List<SpreadsheetEntry> spreadsheets = feed.getEntries();
 
-    	    // Caso não exista planilhas deve-se ser tratado neste ponto
+    	    // Caso não exista planilha cria-se uma planilha passando o parâmetro
     	    if (spreadsheets.size() == 0) {
-    	      
+    	    	this.criarPlanilha(idPlanilha);
     	    }
 
     	    // Varre a lista de planilhas do usuário em busca da planilha com o titulo passado como parâmetro
@@ -195,55 +191,82 @@ public class PlanilhasGoogle {
     	 return null;
     }
     
+    /**
+     * Este método obtém uma tupla a partir do ID passado por parâmetro
+     * @param idPlanilha
+     * @param id
+     * @return tupla
+     * @throws Exception 
+     */
+    public List<String> buscaTuplaPeloId(String idPlanilha, String id) throws Exception  {		    	
+    	int linhaID = 0;
+    	List<String> conteudoDaTupla = new ArrayList<String>();
+    	    	
+    	SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
     
-    public String getConteudoDaCelulaPeloId(String idPlanilha, String idCelula) {
-    	
-    	try{
-	    	SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
-			
-			service.setUserCredentials(USERNAME, PASSWORD);
-			
-			// Obtém a planilha segundo o seu título/id
-    		SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(idPlanilha);
-    		
-    		// obtém a worksheet default dessa planilha, onde serão adicionados os conteúdos às células
-    		WorksheetEntry worksheetDefault = spreadsheet.getDefaultWorksheet();
-			
-    		// obtém as células dessa worksheet
-		    URL celulaFeedURL = worksheetDefault.getCellFeedUrl();
+	    	service.setUserCredentials(USERNAME, PASSWORD);
+	    	
+	    	// Obtém a planilha segundo o seu título/id
+	    	SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(idPlanilha);
+			    		
+	    	// obtém a worksheet default dessa planilha, onde serão adicionados os conteúdos às células
+	    	WorksheetEntry worksheetDefault = spreadsheet.getDefaultWorksheet();
+			    		
+	    	// obtém as células dessa worksheet
+	    	URL celulaFeedURL = worksheetDefault.getCellFeedUrl();
 		    CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
+		    		    
 		    for(CellEntry celula: celulaFeed.getEntries()){
-		    	
-		    	if(celula.getId().equals(idCelula)){
-					return celula.getCell().getInputValue();
+		    	// verifica se a célula contém o referido ID e se pertence a primeira coluna
+		    	if(celula.getCell().getValue().equals(id) && celula.getCell().getCol() == 1){
+		    		// obtém a linha do ID
+		    		linhaID = celula.getCell().getRow();
+		    		// adiciona o ID na lista
+		    		conteudoDaTupla.add(celula.getCell().getValue());
+		    	// verifica se a celula está na mesma linha que o ID. Não podendo ser o próprio ID.
+		    	} else if(celula.getCell().getRow() == linhaID && !celula.getCell().getValue().equals(id)){
+		    		// satisfazendo esta condição, adiciona toda a linha na lista 
+		    		conteudoDaTupla.add(celula.getCell().getValue());
+		    	}	
+		    }
+    	
+    	return conteudoDaTupla; 
+    }
+    
+
+    public int getLinhas(String idPlanilha){
+    	int quantidadeDeLinhas = 0;
+    	int primeiraColuna = 1;
+    	SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
+    	try{
+	    	service.setUserCredentials(USERNAME, PASSWORD);
+	    	
+	    	// Obtém a planilha segundo o seu título/id
+	    	SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(idPlanilha);
+			    		
+	    	// obtém a worksheet default dessa planilha, onde serão adicionados os conteúdos às células
+	    	WorksheetEntry worksheetDefault = spreadsheet.getDefaultWorksheet();
+			    		
+	    	// obtém as células dessa worksheet
+	    	URL celulaFeedURL = worksheetDefault.getCellFeedUrl();
+		    CellFeed celulaFeed = service.getFeed(celulaFeedURL, CellFeed.class);
+		    
+		    for(CellEntry celula: celulaFeed.getEntries()){
+		    	if(celula.getCell().getCol() == primeiraColuna){
+		    		quantidadeDeLinhas++;
 		    	}
 		    }
 		    
-		    
-		} catch(Exception e){
-			e.printStackTrace();
-			
+    	} catch(Exception e){
+			e.printStackTrace();	
 		}
-		return "Não existe uma célula com este ID!";
+    	return quantidadeDeLinhas;
     }
-
     
       
     
-    public void removePlanilha(String idPlanilha){
-    	try{
-	    	SpreadsheetService service = new SpreadsheetService("MySpreadsheetIntegration-v1");
-			
-			service.setUserCredentials(USERNAME, PASSWORD);
-			
-			SpreadsheetEntry spreadsheet = this.buscaPlanilhaPeloTitulo(idPlanilha);
-			
-			spreadsheet.delete();
-			
-    	} catch(Exception e){
-			e.printStackTrace();
-			
-		}
+    public void removePlanilha(String idPlanilha) {
+    	// À implementar
     }
     
         
@@ -276,9 +299,9 @@ public class PlanilhasGoogle {
     }
 	
     
-    /**este método retorna a última linha preenchida da primeira coluna, a coluna referente as questões.
-     *  
-     * @param tituloPlanilha
+    /**
+     * Este método retorna a última linha preenchida da primeira coluna, a coluna referente as questões. 
+     * @param idPlanilha
      * @return
      */
     public int getUltimaLinhaPreenchidas(String idPlanilha, int coluna){
@@ -398,47 +421,73 @@ public class PlanilhasGoogle {
     
     
     /**
-     * Consertar...
-     * 
+     * Gera os ID's das planilhas e questões passando um enum IDCelulas como parâmetro
+     * O último ID gerado das planilhas é armazenado na primeira linha da primeira coluna
+     * O último ID gerado das questões é armazenado na primeira linha da segunda coluna
      */
-    
-    public String gerarID(){
+    public String gerarID(ID enumID){
     	int numeroUM = 1;
+    	int numeroDOIS = 2;
     	String id = null;
-    	
+    	// Obtém a planilha que contém os ID's gerados
 	    SpreadsheetEntry planilhaID = this.buscaPlanilhaPeloTitulo(PlanilhasGoogle.planilhaID);	
-	    // 
+	   
+	    // Verifica se a planilha existe
 	    if(planilhaID != null){
+	    	// Obtém a lista de células preenchidas da planilha
 	    	List <String> celulas = this.getConteudoCelula(PlanilhasGoogle.planilhaID);
-	    	if(celulas.size() == numeroUM){
-	    		int idAntigo = Integer.parseInt(celulas.get(celulas.size()-numeroUM));
-		    	id = Integer.toString(++idAntigo);
-		    	this.addConteudoEmCelula(PlanilhasGoogle.planilhaID, id, numeroUM, numeroUM);
-		    	return id;
-	    	} else {
-	    		// está adcionando o id na celula
-	    		id = Integer.toString(numeroUM);
-		    	// será armazenado o ultimo id criado na primeira linha, primeira coluna
-		    	this.addConteudoEmCelula(PlanilhasGoogle.planilhaID, id, numeroUM, numeroUM);
-		    	return id;
+	    	
+	    	// Verifica se há apenas UMA célula preenchida na planilha (Célula que contém o último ID)
+	    	if(enumID == ID.PLANILHA){
+	    		// Verifica se a lista está vazia
+		    	if(!celulas.isEmpty() || celulas.size() == numeroUM){
+		    		
+		    		// Obtém o último ID gravado na célula. linha 1 / coluna 1 
+		    		int idAntigo = Integer.parseInt(celulas.get(0));
+		    		// Atualiza o valor do ID
+			    	id = Integer.toString(++idAntigo);
+			    	// Adiciona-o novamente na mesma célula
+			    	this.addConteudoEmCelula(PlanilhasGoogle.planilhaID, id, numeroUM, numeroUM);
+	
+		    	} else {
+		    		// Adiciona o ID na célula
+		    		id = Integer.toString(numeroUM);
+			    	// O ID será armazenado na primeira linha, primeira coluna
+			    	this.addConteudoEmCelula(PlanilhasGoogle.planilhaID, id, numeroUM, numeroUM);
+		    	}
+		    	
+		    	
+	    	} else if(enumID == ID.QUESTAO ){
+	    		// Verifica se a célula da primeira linha e segunda coluna está vazia
+		    	if(celulas.size() >= numeroUM){ 
+		    		
+		    		// Obtém o último ID gravado na célula
+		    		int idAntigo = Integer.parseInt(celulas.get(celulas.size()-numeroUM));
+		    		// Atualiza o valor do ID
+			    	id = Integer.toString(++idAntigo);
+			    	// Adiciona-o novamente na mesma célula. linha X coluna
+			    	this.addConteudoEmCelula(PlanilhasGoogle.planilhaID, id, numeroUM, numeroDOIS);
+	
+		    	} else {
+		    		// Adiciona o ID na célula
+		    		id = Integer.toString(numeroUM);
+			    	// O ID será armazenado na primeira linha, primeira coluna
+			    	this.addConteudoEmCelula(PlanilhasGoogle.planilhaID, id, numeroUM, numeroDOIS);
+		    	}	
 	    	}
 	    	
-	    	
+	    	return id;
+	    // Caso a planilha não exista, ou caso não tenha sido criada	
 	    } else {
+	    	// Cria a planilha
 	    	this.criarPlanilha(PlanilhasGoogle.planilhaID);
 	    	id = Integer.toString(numeroUM);
-	    	// será armazenado o ultimo id criado na primeira linha, primeira coluna
+	    	// Armazena o ID na primeira linha, primeira coluna
 	    	this.addConteudoEmCelula(PlanilhasGoogle.planilhaID, id, numeroUM, numeroUM);
 	    	return id;
-	    }
-		
-	    	
-    }
-    
-    
-    
+	    }  	
+    } // Fim gerarID
 
-   
     
     
 }
