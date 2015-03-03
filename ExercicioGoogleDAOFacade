@@ -1,0 +1,103 @@
+package br.ufpb.educservice.persistencia;
+
+import br.ufpb.educservice.Exercicio;
+import br.ufpb.educservice.QuestaoDissertativa;
+import br.ufpb.educservice.QuestaoMultiplaEscolha;
+import br.ufpb.educservice.QuestaoVouF;
+
+
+public class ExercicioGoogleDAOFacade {
+	
+	private ExercicioGoogleDAO exercicioDAO;
+	private Exercicio exercicio;
+	
+	public ExercicioGoogleDAOFacade(){
+		this.exercicioDAO = new ExercicioGoogleDAO();
+	}
+	
+	/**
+	 * 
+	 */
+	public Exercicio criarExercicio() {
+		try {
+			this.exercicio = this.exercicioDAO.criarExercicio();
+		} catch (PlanilhaNaoCriadaException e) {
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+		return this.exercicio;
+	}
+	
+	/**
+	 * 
+	 */
+	public void apagarExercicio(String id){
+		this.exercicioDAO.apagar(id);
+	}
+	
+	public Exercicio pesquisarExercicioPorId(String id){
+		Exercicio exercicio = this.exercicioDAO.pesquisarExercicioPorId(id);
+		return exercicio;
+	}
+	
+	
+	/**
+	 * 
+	 * @param questaoME
+	 */
+	public QuestaoMultiplaEscolha cadastrarQuestaoMultiplaEscolha(String idExercicio, QuestaoMultiplaEscolha questaoME){
+		QuestaoMultiplaEscolha questao = this.exercicioDAO.cadastrarQuestaoME(idExercicio, questaoME.getEnunciado(), questaoME.getAlternativas());
+		return questao;
+	}
+	
+	/**
+	 * 
+	 * @param questaoVouF
+	 */
+	public QuestaoVouF cadastrarQuestaoVouF(QuestaoVouF questaoVouF){
+		QuestaoVouF questao = this.exercicioDAO.cadastrarQuestaoVouF(this.exercicio.getId(), questaoVouF.getAfirmativas());
+		return questao;
+	}
+	
+	/**
+	 * 
+	 * @param questaoDss
+	 */
+	public QuestaoDissertativa cadastrarQuestaoDissertativa(QuestaoDissertativa questaoDss){
+		QuestaoDissertativa questao = this.exercicioDAO.cadastrarQuestaoDissertativa(this.exercicio.getId(), questaoDss.getEnunciado());
+		return questao;
+	}
+	
+	/**
+	 * 
+	 * @param id
+	 * @return questao
+	 */
+	public QuestaoMultiplaEscolha pesquisarQuestaoMultiplaEscolhaPorId(String idExercicio, String idQuestao){
+		QuestaoMultiplaEscolha questao = this.exercicioDAO.pesquisarQuestaoMEPorId(idExercicio, idQuestao);
+		return questao;
+	}
+	
+	/**
+	 * 
+	 * @param id
+	 * @return questao
+	 */
+	public QuestaoVouF pesquisarQuestaoVouFPorId(String id){
+		QuestaoVouF questao = this.exercicioDAO.pesquisarQuestaoVouFPorId(this.exercicio.getId(), id);
+		return questao;
+	}
+	
+	/**
+	 * 
+	 * @param id
+	 * @return questao
+	 */
+	public QuestaoDissertativa pesquisarQuestaoDissertativaPorId(String id){
+		QuestaoDissertativa questao = this.exercicioDAO.pesquisarQuestaoDissertativaPorId(this.exercicio.getId(), id);
+		return questao;
+	}
+	
+	
+
+}
