@@ -3,7 +3,6 @@ package br.ufpb.educservice.persistencia;
 import java.util.LinkedList;
 import java.util.List;
 
-
 import br.ufpb.educservice.Exercicio;
 import br.ufpb.educservice.ExercicioDAO;
 import br.ufpb.educservice.Questao;
@@ -15,154 +14,357 @@ import br.ufpb.gdata.educservice.PlanilhasGoogle;
 
 public class ExercicioGoogleDAO implements ExercicioDAO{
 	
-	private List<Exercicio> exercicios = new LinkedList<Exercicio>();
+	// Instancia da classe que trata das operações e manipulação de dados nas planilhas
 	private PlanilhasGoogle planilhaGoogle = new PlanilhasGoogle();
+	
+	// Palavra default para concatenar junto com o id, para distinguir as planilhas 
+	private String palavraExercicio = "EXERCICIO";
+	
+	// Usado para separar o id da palavra. Ex.: 01-EXERCICIO, 01-RESPOSTA
+	private String tokenDeSeparacao = "-";
+	
+	// Essa variável irá auxiliar na adição de conteúdos as celulas. 
+	// Os tipos das questões localizar-se-ão na primeira coluna.
+	public static int COLUNA_DO_TIPO_DA_QUESTAO = 1;
+	
 		
 	
 	/**
 	 * Este Método cria um Exercício e chama o método criarPlanilha da classe 
-	 * PlanilhasGoogle passando o ID do Exercicio como parâmetro
+	 * Antes de criar um Exercicio é gerado um ID para o mesmo
 	 * 
 	 */
-	public Exercicio criarExercicio() {
+	public Exercicio criarExercicio() throws PlanilhaNaoCriadaException{
 		
-		// Cria um id com a data e a hora em que foi criado o exercício
+		// método que gera o id sequencialmente
+		String id = planilhaGoogle.gerarID(ID.PLANILHA);
 		
-		String id = IDGenerator.getInstance().gerarID();
-		Exercicio exercicio = new Exercicio(id);
-		this.exercicios.add(exercicio);
-		
-		planilhaGoogle.criarPlanilha(id);
-		return exercicio;
+		// verifica se gerou o id corretamente
+		if(id != null){
+			// O id gerado ficará com o seguinte formato: 'numero'-EXERCICIO. Ex.: 1-Exercicio
+			Exercicio exercicio = new Exercicio(id + this.tokenDeSeparacao + this.palavraExercicio);
+			
+			planilhaGoogle.criarPlanilha(id + this.tokenDeSeparacao + this.palavraExercicio);
+			
+			return exercicio;
+		} else {
+			throw new PlanilhaNaoCriadaException("Não foi possível criar a planilha");
+		}
 	}
+	
 
 	/**
-	 * Este Método exclui um Exercício da lista de exercicios
-	 * Passando o id por parâmetro
+	 * Este método apaga uma planilha passando o id por parâmetro
 	 * @throws ExercicioInexistenteException 
 	 */
 	public void apagar(String idExercicio) {
-		
-		
+		planilhaGoogle.removePlanilha(idExercicio);
 	}
+	
 
-	@Override
+	/**
+	 * 
+	 */
 	public void atualizar(Exercicio e) {
 		// TODO Auto-generated method stub
 		
 	}
 
+	
 	/**
-	 * Este método pesquisa um exercicio pelo ID, caso não seja encontrado lança uma exceção
+	 * Este método pesquisa um exercicio pelo ID, adiciona as questões do mesmo e retorna-o
 	 */
 	public Exercicio pesquisarExercicioPorId(String idExercicio) {
-		return null;
 		
+		// Lista para armazenar as questões do exercício
+		List<Questao> questoes  = new LinkedList<Questao>();
 		
+		// Obtém a planilha referente ao exercicio
+		com.google.gdata.data.spreadsheet.SpreadsheetEntry planilha = planilhaGoogle.buscaPlanilhaPeloTitulo(idExercicio);
+		
+		// Inicializa o exercicio passando o ID da planilha como ID
+		Exercicio exercicio = new Exercicio(planilha.getTitle().getPlainText());
+		
+		// Obtém a quantidade de linhas/questões do exercicio e atribui a um contador
+		int contador = planilhaGoogle.getLinhas(idExercicio);
+		
+		// Varre toda a planilha adicionando as questões na lista
+		for(int i = 1; i  <= contador; i++){
+			questoes.add(this.pesquisarQuestaoPorId(idExercicio, Integer.toString(i)));
+		}
+		exercicio.setQuestoes(questoes);		
+		
+		return exercicio;
 	}
+	
 
-	@Override
+	/**
+	 * Armazena as questões de Multipla Escolha na planilha
+	 * Seguindo esta ordem: ID -> tipoDaQuestao -> alternativas
+	 */
 	public QuestaoMultiplaEscolha cadastrarQuestaoME(String idExercicio, String enunciado, List<String> alternativas) {
+		
 		// obtém a primeira coluna para mais a frente acrescentar e adicionar cada alternativa
-		int colunaAlternativas = planilhaGoogle.COLUNA_DA_QUESTAO;
+		int primeiraColuna = ExercicioGoogleDAO.COLUNA_DO_TIPO_DA_QUESTAO;
 		
 		// Nesta variável irá armazenar a última linha preenchida da coluna de questões  
-		int linhaParaAdicionar = planilhaGoogle.getUltimaLinhaPreenchidas(idExercicio, planilhaGoogle.COLUNA_DA_QUESTAO);
-				
+		int linhaParaAdicionar = planilhaGoogle.getUltimaLinhaPreenchidas(idExercicio, ExercicioGoogleDAO.COLUNA_DO_TIPO_DA_QUESTAO);
+		
+		// será adicionado na primeira coluna o ID da questão
+		planilhaGoogle.addConteudoEmCelula(idExercicio, planilhaGoogle.gerarID(ID.QUESTAO), ++linhaParaAdicionar, primeiraColuna);
+		
+		// será adicionado na segunda coluna o tipo da questão 
+		planilhaGoogle.addConteudoEmCelula(idExercicio, QuestaoMultiplaEscolha.class.getSimpleName(), linhaParaAdicionar, ++primeiraColuna);
+		
 		// será acrescentado uma unidade a mais para que seja adicionado a nova questão na proxima linha, que está vazia
 		// adiciona o enunciado da questão na primeira coluna na linha subsequente as demais preenchidas
-		planilhaGoogle.addConteudoEmCelula(idExercicio, enunciado, ++linhaParaAdicionar, planilhaGoogle.COLUNA_DA_QUESTAO);
+		planilhaGoogle.addConteudoEmCelula(idExercicio, enunciado, linhaParaAdicionar, 
+				++primeiraColuna);
 		
 		// Adiciona cada alternativa na mesma linha que o enunciado, porém nas colunas posteriores
 		for(String alternativa: alternativas){
-			planilhaGoogle.addConteudoEmCelula(idExercicio, alternativa, linhaParaAdicionar, ++colunaAlternativas);
+			planilhaGoogle.addConteudoEmCelula(idExercicio, alternativa, linhaParaAdicionar, ++primeiraColuna);
 		}
 			
+		QuestaoMultiplaEscolha questaoMultiplaEscolha = new QuestaoMultiplaEscolha
+				(Integer.toString(linhaParaAdicionar), enunciado, alternativas);
 		
-		return null;
+		return questaoMultiplaEscolha;
 	}
+	
 
-	@Override
+	/**
+	 * Armazena as questões VouF na planilha
+	 * Seguindo esta ordem: ID -> tipoDaQuestao -> afirmativas
+	 */
 	public QuestaoVouF cadastrarQuestaoVouF(String idExercicio, List<String> afirmativas) {
-		// obtém a primeira coluna para mais a frente acrescentar e adicionar cada alternativa
-		int colunaAlternativas = planilhaGoogle.COLUNA_DA_QUESTAO;
+		
+		// obtém o número referente a primeira coluna para mais a frente acrescentar e adicionar cada afirmativa
+		int primeiraColuna = ExercicioGoogleDAO.COLUNA_DO_TIPO_DA_QUESTAO;
 		// variável pra preencher a linha da primeira coluna onde serão armazenadas as afirmativas
 		String enunciado = "Questões V/F";
 		
 		// Nesta variável irá armazenar a última linha preenchida da coluna de questões  
-		int linhaParaAdicionar = planilhaGoogle.getUltimaLinhaPreenchidas(idExercicio, planilhaGoogle.COLUNA_DA_QUESTAO);
-			
+		int linhaParaAdicionar = planilhaGoogle.getUltimaLinhaPreenchidas(idExercicio, ExercicioGoogleDAO.COLUNA_DO_TIPO_DA_QUESTAO);
+		
+		// será adicionado na primeira coluna o ID da questão
+		planilhaGoogle.addConteudoEmCelula(idExercicio, planilhaGoogle.gerarID(ID.QUESTAO), ++linhaParaAdicionar, primeiraColuna);
+		
+		// será adicionado na segunda coluna o tipo da questão 
+		planilhaGoogle.addConteudoEmCelula(idExercicio, QuestaoVouF.class.getSimpleName(), linhaParaAdicionar, ++primeiraColuna);
+						
 		// será acrescentado uma unidade a mais para que seja adicionado a nova questão na proxima linha, que está vazia
 		// adiciona o enunciado da questão na primeira coluna na linha subsequente as demais preenchidas
-		planilhaGoogle.addConteudoEmCelula(idExercicio, enunciado, ++linhaParaAdicionar, planilhaGoogle.COLUNA_DA_QUESTAO);
+		planilhaGoogle.addConteudoEmCelula(idExercicio, enunciado, linhaParaAdicionar, ++primeiraColuna);
 				
 		// Adiciona cada alternativa na mesma linha que o enunciado, porém nas colunas posteriores
 		for(String afirmativa: afirmativas){
-			planilhaGoogle.addConteudoEmCelula(idExercicio, afirmativa, linhaParaAdicionar, ++colunaAlternativas);
+			planilhaGoogle.addConteudoEmCelula(idExercicio, afirmativa, linhaParaAdicionar, ++primeiraColuna);
 		}
-		return null;
+		
+		QuestaoVouF questaoVouF = new QuestaoVouF(Integer.toString(linhaParaAdicionar), afirmativas);
+		
+		return questaoVouF;
 	}
 
-	@Override
+	
+	/**
+	 * Armazena as questões Dissertativas na planilha
+	 * Seguindo esta ordem: ID -> tipoDaQuestao -> enunciado
+	 */
 	public QuestaoDissertativa cadastrarQuestaoDissertativa(String idExercicio, String enunciado) {
-		
+		// obtém a primeira coluna para mais a frente acrescentar e adicionar cada alternativa
+		int primeiraColuna = ExercicioGoogleDAO.COLUNA_DO_TIPO_DA_QUESTAO;
+				
 		// Nesta variável irá armazenar a última linha preenchida da coluna de questões  
-		int linhaParaAdicionar = planilhaGoogle.getUltimaLinhaPreenchidas(idExercicio, planilhaGoogle.COLUNA_DA_QUESTAO);
+		int linhaParaAdicionar = planilhaGoogle.getUltimaLinhaPreenchidas(idExercicio, ExercicioGoogleDAO.COLUNA_DO_TIPO_DA_QUESTAO);
+		
+		// será adicionado na primeira coluna o ID da questão
+		planilhaGoogle.addConteudoEmCelula(idExercicio, planilhaGoogle.gerarID(ID.QUESTAO), ++linhaParaAdicionar, primeiraColuna);
+		
+		// será adicionado na segunda coluna o tipo da questão 
+		planilhaGoogle.addConteudoEmCelula(idExercicio, QuestaoDissertativa.class.getSimpleName(), linhaParaAdicionar, ++primeiraColuna);
 		
 		// será acrescentado uma unidade a mais para que seja adicionado a nova questão na proxima linha, que está vazia
 		// adiciona o enunciado da questão na primeira coluna na linha subsequente as demais preenchidas
-		planilhaGoogle.addConteudoEmCelula(idExercicio, enunciado, ++linhaParaAdicionar, planilhaGoogle.COLUNA_DA_QUESTAO);
+		planilhaGoogle.addConteudoEmCelula(idExercicio, enunciado, linhaParaAdicionar, ++primeiraColuna);
 	
-		return null;
+		QuestaoDissertativa questaoDissertativa = new QuestaoDissertativa(Integer.toString(linhaParaAdicionar), enunciado);
+		
+		return questaoDissertativa;
 	}
 
+	
+	/**
+	 * Pesquisa a questão na planilha a partir do ID passado por parâmetro
+	 * retorna uma questão segundo seu tipo
+	 */
+	public Questao pesquisarQuestaoPorId(String idExercicio, String idQuestao){
+		// Lista para armazenar a tupla
+		List<String> conteudoDaQuestao;
+		try {
+			// Obtém a tupla a partir do ID passado por parâmetro
+			conteudoDaQuestao = planilhaGoogle.buscaTuplaPeloId(idExercicio, idQuestao);
+			
+			// Obtém o nome da classe, que é o segundo elemento da lista
+			String classe = conteudoDaQuestao.get(1);
+					
+			// Retorna caso a Questão seja Dissertativa
+			if(QuestaoDissertativa.class.getSimpleName().equals(classe)){
+				QuestaoDissertativa questaoDissertativa = new QuestaoDissertativa(conteudoDaQuestao.get(0), conteudoDaQuestao.get(2));
+				return questaoDissertativa;
+							
+				// Retorna caso a Questão seja de VouF
+			} else if (QuestaoVouF.class.getSimpleName().equals(classe)){
+				QuestaoVouF questaoVouF = new QuestaoVouF(conteudoDaQuestao.get(0), conteudoDaQuestao.subList(2, conteudoDaQuestao.size()));
+				return questaoVouF;
+							
+				// Retorna caso a Questão seja de Multipla Escolha
+			}else if (QuestaoMultiplaEscolha.class.getSimpleName().equals(classe)){
+				QuestaoMultiplaEscolha questaoME = new QuestaoMultiplaEscolha(conteudoDaQuestao.get(0),conteudoDaQuestao.get(2), conteudoDaQuestao.subList(3, conteudoDaQuestao.size()));
+				return questaoME;
+			}
+			
+				
+		} catch (Exception e) {
+			
+			e.printStackTrace();
+		}
+		return null; 
+	}
+	
+
+	/**
+	 * Este método pesquisa uma questão pelo seu id e a retorna, caso esta seja de Multipla Escolha
+	 * Caso não seja de Multipla Escolha retorna null
+	 */
+	public QuestaoMultiplaEscolha pesquisarQuestaoMEPorId(String idExercicio, String idQuestao) {
+		QuestaoMultiplaEscolha questaoME = (QuestaoMultiplaEscolha) this.pesquisarQuestaoPorId(idExercicio, idQuestao);
+		if(QuestaoMultiplaEscolha.class.getSimpleName().equals(questaoME.getClass().getSimpleName())){
+			return questaoME;
+		}
+		return null; // Retorna nullo quando o objeto não é encontrado, logo não há instância para retornar
+	}
+	
+
+	/**
+	 * Este método pesquisa uma questão pelo seu id e a retorna, caso esta seja de VouF
+	 * Caso não seja de VouF retorna null
+	 */
+	public QuestaoVouF pesquisarQuestaoVouFPorId(String idExercicio, String idQuestao) {
+		QuestaoVouF questaoVouF = (QuestaoVouF) this.pesquisarQuestaoPorId(idExercicio, idQuestao);
+		if(QuestaoVouF.class.getSimpleName().equals(questaoVouF.getClass().getSimpleName())){
+			return questaoVouF;
+		}
+		return null; // Retorna nullo quando o objeto não é encontrado, logo não há instância para retornar
+	}
+
+	
+	/**
+	 * Este método pesquisa uma questão pelo seu id e a retorna, caso esta seja Dissertativa
+	 * Caso não seja Dissertativa retorna null
+	 */
+	public QuestaoDissertativa pesquisarQuestaoDissertativaPorId(String idExercicio, String idQuestao) {
+		QuestaoDissertativa questaoDss = (QuestaoDissertativa) this.pesquisarQuestaoPorId(idExercicio, idQuestao);
+		if(QuestaoDissertativa.class.getSimpleName().equals(questaoDss.getClass().getSimpleName())){
+			return questaoDss;
+		}
+		return null; // Retorna nullo quando o objeto não é encontrado, logo não há instância para retornar
+	}
+
+	
+	/**
+	 * Este método armazena a alternativa correta da questão a partir do ID dessa questão
+	 * @param idExercicio
+	 * @param questao
+	 * @param alternativaCorreta
+	 * @return questao
+	 */
+	public QuestaoMultiplaEscolha cadastrarRespostaQuestaoMEPorId(String idExercicio, String idQuestao, int alternativaCorreta) {
+		
+		// obtém a primeira coluna para mais a frente acrescentar e adicionar cada alternativa
+		int primeiraColuna = ExercicioGoogleDAO.COLUNA_DO_TIPO_DA_QUESTAO;
+		
+		// Variável que contém a linha em que serão adicionados o ID e a resposta   
+		int linhaParaAdicionar = Integer.parseInt(idQuestao);
+				
+		// será adicionado na primeira coluna o ID da questão
+		planilhaGoogle.addConteudoEmCelula(idExercicio, idQuestao, linhaParaAdicionar, primeiraColuna);
+				
+		// será adicionado na segunda coluna a resposta correta
+		planilhaGoogle.addConteudoEmCelula(idExercicio, Integer.toString(alternativaCorreta), linhaParaAdicionar, ++primeiraColuna);
+		
+		// Retorna a questão que foi cadastrada a resposta
+		return this.pesquisarQuestaoMEPorId(idExercicio, idQuestao);
+	}
+
+	
+	/**
+	 * Este método armazena a alternativa correta da questão a partir do ID dessa questão
+	 * @param idExercicio
+	 * @param questao
+	 * @param respostas
+	 * @return questao
+	 */
+	public QuestaoVouF cadastrarRespostaQuestaoVouFPorId(String idExercicio, String idQuestao, List<String> respostas) {
+		// obtém a primeira coluna para mais a frente acrescentar e adicionar cada alternativa
+		int primeiraColuna = ExercicioGoogleDAO.COLUNA_DO_TIPO_DA_QUESTAO;
+				
+		// Variável que contém a linha em que serão adicionados o ID e a resposta   
+		int linhaParaAdicionar = Integer.parseInt(idQuestao);
+						
+		// será adicionado na primeira coluna o ID da questão
+		planilhaGoogle.addConteudoEmCelula(idExercicio, idQuestao, linhaParaAdicionar, primeiraColuna);
+		
+		// será adicionado a partir da segunda coluna as respostas corretas
+		for(String resposta: respostas){
+			planilhaGoogle.addConteudoEmCelula(idExercicio, resposta, linhaParaAdicionar, ++primeiraColuna);
+		}
+						
+		// Retorna a questão que foi cadastrada a resposta
+		return this.pesquisarQuestaoVouFPorId(idExercicio, idQuestao);
+	}
+
+	
+	/**
+	 * Este método armazena a alternativa correta da questão a partir do ID dessa questão
+	 * @param idExercicio
+	 * @param questao
+	 * @param respostas
+	 * @return questao
+	 */
+	public QuestaoDissertativa cadastrarRespostaQuestaoDissertativaPorId(String idExercicio, String idQuestao, String solucao) {
+		// obtém a primeira coluna para mais a frente acrescentar e adicionar cada alternativa
+		int primeiraColuna = ExercicioGoogleDAO.COLUNA_DO_TIPO_DA_QUESTAO;
+		
+		// Variável que contém a linha em que serão adicionados o ID e a resposta   
+		int linhaParaAdicionar = Integer.parseInt(idQuestao);
+		
+		// será adicionado na primeira coluna o ID da questão
+		planilhaGoogle.addConteudoEmCelula(idExercicio, idQuestao, linhaParaAdicionar, primeiraColuna);
+						
+		// será adicionado na segunda coluna a resposta correta
+		planilhaGoogle.addConteudoEmCelula(idExercicio, solucao, linhaParaAdicionar, ++primeiraColuna);
+		
+		// Retorna a questão que foi cadastrada a resposta
+		return this.pesquisarQuestaoDissertativaPorId(idExercicio, idQuestao);
+	}
+
+
 	@Override
-	public Questao pesquisarQuestaoPorId(String idExercicio, String idQuestao) {
+	public Exercicio criarExercicio(List<String> palavrasChave) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
-	public QuestaoMultiplaEscolha pesquisarQuestaoMEPorId(String idExercicio,
-			String idQuestao) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@Override
-	public QuestaoVouF pesquisarQuestaoVouFPorId(String idExercicio,
-			String idQuestao) {
+	public void configuraPalavrasChave(String idExercicio) {
 		// TODO Auto-generated method stub
-		return null;
+		
 	}
-
-	@Override
-	public QuestaoDissertativa pesquisarQuestaoDissertativaPorId(
-			String idExercicio, String idQuestao) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public QuestaoMultiplaEscolha cadastrarRespostaQuestaoMEPorId(
-			String idExercicio, int alternativaCorreta) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public QuestaoVouF cadastrarRespostaQuestaoVouFPorId(String idExercicio,
-			List<String> respostas) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public QuestaoDissertativa cadastrarRespostaQuestaoDissertativaPorId(
-			String idExercicio, String idQuestao, String solucao) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	
+	
 	
 	
 }
